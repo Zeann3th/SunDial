@@ -9,7 +9,7 @@ import (
 
 func AddClock(font rl.Font, SCREEN_WIDTH, SCREEN_HEIGHT int, color rl.Color) {
 	dt := time.Now()
-	day := fmt.Sprintf("%v, %d tháng %d", dt.Weekday().String(), dt.Day(), dt.Month())
+	day := fmt.Sprintf("%v, %s %dth", dt.Weekday().String(), dt.Month().String(), dt.Day())
 	dayWidth := rl.MeasureTextEx(font, day, float32(font.BaseSize/3), 14)
 	clock := fmt.Sprintf("%02d:%02d", dt.Hour(), dt.Minute())
 	clockWidth := rl.MeasureTextEx(font, clock, float32(font.BaseSize), 14)

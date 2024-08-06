@@ -25,8 +25,8 @@ type Schedule struct {
 	teacherName string
 }
 
-func parseTxt() {
-	file, err := os.Open("../../assets/tkb.txt")
+func parseTxt(path string) {
+	file, err := os.Open(path)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -58,7 +58,4 @@ func parseTxt() {
 		}
 		fmt.Println(timeTable[i])
 	}
-}
-
-func parseExcel() {
 }

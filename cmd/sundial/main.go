@@ -25,6 +25,7 @@ var (
 	backgroundMusic ui.Music
 	mousePoint      = rl.NewVector2(0.0, 0.0)
 	addBtn          ui.Button
+	notes           []*ui.Note
 	enterBtn        ui.Button
 )
 
@@ -58,7 +59,14 @@ func init() {
 		ROOT+"assets/components/button/btnsound.wav",
 		rl.NewVector2(SCREEN_WIDTH-20, SCREEN_HEIGHT-20), 1,
 		func() {
-			fmt.Println("Coming soon")
+			newNote := ui.NewNote(
+				rl.NewVector2(
+					float32(rl.GetRandomValue(300, SCREEN_WIDTH-300)),
+					float32(rl.GetRandomValue(100, SCREEN_HEIGHT-100)),
+				),
+				rl.NewVector2(SCREEN_WIDTH, SCREEN_HEIGHT),
+			)
+			notes = append(notes, newNote)
 		},
 	)
 
@@ -104,6 +112,20 @@ func AppUpdate() {
 		enterBtn.Update(mousePoint)
 	case 2:
 		addBtn.Update(mousePoint)
+
+		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+			for _, note := range notes {
+				if rl.CheckCollisionPointRec(mousePoint, note.Src) {
+					note.IsExpanded = !note.IsExpanded
+					break
+				}
+				if !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
+					note.IsExpanded = false
+					break
+				}
+			}
+		}
+
 	}
 }
 
@@ -126,6 +148,13 @@ func AppRender() {
 		// Canvas
 
 		addBtn.Draw()
+		for _, note := range notes {
+			if note.IsExpanded {
+				note.DrawTextureEx()
+			} else {
+				note.DrawTextureMini()
+			}
+		}
 	default:
 	}
 

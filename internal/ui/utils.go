@@ -7,7 +7,7 @@ import (
 	rl "github.com/gen2brain/raylib-go/raylib"
 )
 
-func AddClock(font rl.Font, SCREEN_WIDTH, SCREEN_HEIGHT int, color rl.Color) {
+func NewClock(font rl.Font, SCREEN_WIDTH, SCREEN_HEIGHT int, color rl.Color) {
 	dt := time.Now()
 	// Day. e.g: Tuesday, August 6th
 	day := fmt.Sprintf("%v, %s %dth", dt.Weekday().String(), dt.Month().String(), dt.Day())
@@ -35,5 +35,3 @@ func AddClock(font rl.Font, SCREEN_WIDTH, SCREEN_HEIGHT int, color rl.Color) {
 		14,
 		color)
 }
-
-func AddButton() {}

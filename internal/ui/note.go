@@ -15,7 +15,7 @@ type Note struct {
 	Color      rl.Color
 	Content    []string
 	IsExpanded bool
-	Onclick    func()
+	Z          int
 }
 
 func NewNote(notePos, screenDims rl.Vector2) *Note {

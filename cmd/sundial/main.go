@@ -24,9 +24,9 @@ var (
 	appState        = 1
 	backgroundMusic ui.Music
 	mousePoint      = rl.NewVector2(0.0, 0.0)
-	addBtn          ui.Button
+	addBtn          *ui.Button
 	notes           []*ui.Note
-	enterBtn        ui.Button
+	arrowBtn        *ui.Button
 )
 
 func main() {
@@ -54,7 +54,7 @@ func init() {
 	background = *ui.NewBackground(ui.DynamicTheme(ROOT+"assets/images/backgrounds/"), rl.NewVector2(SCREEN_WIDTH, SCREEN_HEIGHT))
 
 	// Buttons
-	addBtn = *ui.NewButton(
+	addBtn = ui.NewButton(
 		ROOT+"assets/components/button/addbtn.png",
 		ROOT+"assets/components/button/btnsound.wav",
 		rl.NewVector2(SCREEN_WIDTH-20, SCREEN_HEIGHT-20), 1,
@@ -70,8 +70,8 @@ func init() {
 		},
 	)
 
-	enterBtn = *ui.NewButton(
-		ROOT+"assets/components/button/enterbtn.png",
+	arrowBtn = ui.NewButton(
+		ROOT+"assets/components/button/arrowbtn.png",
 		ROOT+"assets/components/button/btnsound.wav",
 		rl.NewVector2(SCREEN_WIDTH-20, SCREEN_HEIGHT-20), 1,
 		func() {
@@ -109,23 +109,43 @@ func AppUpdate() {
 	mousePoint = rl.GetMousePosition()
 	switch appState {
 	case 1:
-		enterBtn.Update(mousePoint)
+		arrowBtn.Update(mousePoint)
 	case 2:
 		addBtn.Update(mousePoint)
 
-		if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-			for _, note := range notes {
-				if rl.CheckCollisionPointRec(mousePoint, note.Src) {
+		if rl.IsKeyPressed(rl.KeyE) {
+			appState = 3
+		}
+		for _, note := range notes {
+			// Expand notes
+			if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
+				if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 					note.IsExpanded = !note.IsExpanded
 					break
 				}
-				if !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
-					note.IsExpanded = false
+			}
+			// Close notes
+			if note.IsExpanded && !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
+				if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+					note.IsExpanded = !note.IsExpanded
 					break
 				}
 			}
 		}
+	case 3:
 
+		if rl.IsKeyPressed(rl.KeyE) {
+			appState = 2
+		}
+
+		for _, note := range notes {
+			if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
+				if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
+					note.Src.X = mousePoint.X - 0.5*note.Src.Width
+					note.Src.Y = mousePoint.Y - 0.5*note.Src.Height
+				}
+			}
+		}
 	}
 }
 
@@ -142,8 +162,8 @@ func AppRender() {
 		// Title screen
 		ui.NewClock(SFFont, SCREEN_WIDTH, SCREEN_HEIGHT, rl.White)
 
-		enterBtn.Draw()
-	case 2:
+		arrowBtn.Draw()
+	case 2, 3:
 
 		// Canvas
 
@@ -164,7 +184,7 @@ func AppRender() {
 func AppShutDown() {
 	// Unload texture
 	background.Unload()
-	enterBtn.Unload()
+	arrowBtn.Unload()
 	addBtn.Unload()
 
 	// Unload Audio

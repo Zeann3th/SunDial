@@ -225,7 +225,7 @@ func AppRender() {
 	background.DrawWithOverlay()
 
 	// App state e.g: title screen, note canvas, timetable...
-	rl.DrawText(strconv.Itoa(appState), 20, 20, 50, rl.White)
+	// rl.DrawText(strconv.Itoa(appState), 20, 20, 50, rl.White)
 	switch appState {
 	case 1:
 		// Title screen

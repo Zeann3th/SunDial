@@ -18,15 +18,21 @@ const (
 )
 
 var (
-	ROOT            string
+	// App
+	ROOT       string
+	SFFont     rl.Font
+	appState   = 1
+	mousePoint = rl.NewVector2(0.0, 0.0)
+	// Background
 	background      ui.Background
-	SFFont          rl.Font
-	appState        = 1
 	backgroundMusic ui.Music
-	mousePoint      = rl.NewVector2(0.0, 0.0)
-	addBtn          *ui.Button
-	notes           []*ui.Note
-	arrowBtn        *ui.Button
+	// Buttons
+	addBtn  *ui.Button
+	nextBtn *ui.Button
+	backBtn *ui.Button
+	// Canvas
+	notes     []*ui.Note
+	drawQueue []*ui.Note
 )
 
 func main() {
@@ -55,7 +61,7 @@ func init() {
 
 	// Buttons
 	addBtn = ui.NewButton(
-		ROOT+"assets/components/button/addbtn.png",
+		ROOT+"assets/components/button/add_btn.png",
 		ROOT+"assets/components/button/btnsound.wav",
 		rl.NewVector2(SCREEN_WIDTH-20, SCREEN_HEIGHT-20), 1,
 		func() {
@@ -70,13 +76,23 @@ func init() {
 		},
 	)
 
-	arrowBtn = ui.NewButton(
-		ROOT+"assets/components/button/arrowbtn.png",
+	nextBtn = ui.NewButton(
+		ROOT+"assets/components/button/arrow_right_btn.png",
 		ROOT+"assets/components/button/btnsound.wav",
 		rl.NewVector2(SCREEN_WIDTH-20, SCREEN_HEIGHT-20), 1,
 		func() {
 			appState = 2
 			fmt.Println("Entering canvas mode")
+		},
+	)
+
+	backBtn = ui.NewButton(
+		ROOT+"assets/components/button/arrow_left_btn.png",
+		ROOT+"assets/components/button/btnsound.wav",
+		rl.NewVector2(0+50, SCREEN_HEIGHT-20), 1,
+		func() {
+			appState = 1
+			fmt.Println("Entering title screen")
 		},
 	)
 
@@ -109,9 +125,10 @@ func AppUpdate() {
 	mousePoint = rl.GetMousePosition()
 	switch appState {
 	case 1:
-		arrowBtn.Update(mousePoint)
+		nextBtn.Update(mousePoint)
 	case 2:
 		addBtn.Update(mousePoint)
+		backBtn.Update(mousePoint)
 
 		if rl.IsKeyPressed(rl.KeyE) {
 			appState = 3
@@ -133,16 +150,26 @@ func AppUpdate() {
 			}
 		}
 	case 3:
+		addBtn.Update(mousePoint)
+		backBtn.Update(mousePoint)
 
 		if rl.IsKeyPressed(rl.KeyE) {
 			appState = 2
 		}
 
 		for _, note := range notes {
+			// Drag notes
 			if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
 				if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
 					note.Src.X = mousePoint.X - 0.5*note.Src.Width
 					note.Src.Y = mousePoint.Y - 0.5*note.Src.Height
+				}
+			}
+			// Close notes
+			if note.IsExpanded && !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
+				if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+					note.IsExpanded = !note.IsExpanded
+					break
 				}
 			}
 		}
@@ -162,14 +189,23 @@ func AppRender() {
 		// Title screen
 		ui.NewClock(SFFont, SCREEN_WIDTH, SCREEN_HEIGHT, rl.White)
 
-		arrowBtn.Draw()
+		nextBtn.Draw()
 	case 2, 3:
 
 		// Canvas
 
 		addBtn.Draw()
+		backBtn.Draw()
 		for _, note := range notes {
 			if note.IsExpanded {
+				drawQueue = append(drawQueue, note)
+			} else {
+				drawQueue = append([]*ui.Note{note}, drawQueue...)
+			}
+		}
+		for _, note := range drawQueue {
+			if note.IsExpanded {
+				rl.DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, rl.NewColor(0, 0, 0, 150))
 				note.DrawTextureEx()
 			} else {
 				note.DrawTextureMini()
@@ -184,7 +220,7 @@ func AppRender() {
 func AppShutDown() {
 	// Unload texture
 	background.Unload()
-	arrowBtn.Unload()
+	nextBtn.Unload()
 	addBtn.Unload()
 
 	// Unload Audio

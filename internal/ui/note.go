@@ -9,11 +9,16 @@ var palette = map[int]rl.Color{
 	3: rl.Yellow,
 }
 
+type Todo struct {
+	Description string
+	isFinished  bool
+}
+
 type Note struct {
 	Src        rl.Rectangle
 	Dest       rl.Rectangle
 	Color      rl.Color
-	Content    []string
+	Content    []Todo
 	IsExpanded bool
 	Z          int
 }

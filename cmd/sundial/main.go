@@ -12,8 +12,8 @@ import (
 )
 
 const (
-	SCREEN_WIDTH  = 1280
-	SCREEN_HEIGHT = 720
+	SCREEN_WIDTH  = 1920
+	SCREEN_HEIGHT = 1080
 	APP_NAME      = "sundial"
 	MAX_NOTES     = 10
 )
@@ -32,9 +32,8 @@ var (
 	nextBtn *ui.Button
 	backBtn *ui.Button
 	// Canvas
-	notes     []*ui.Note
-	drawQueue []*ui.Note
-	occupied  = 0
+	notes    [MAX_NOTES]*ui.Note
+	occupied = 0
 )
 
 func main() {
@@ -81,8 +80,12 @@ func init() {
 				rl.NewVector2(SCREEN_WIDTH, SCREEN_HEIGHT),
 			)
 			if occupied < MAX_NOTES {
-				notes = append(notes, newNote)
-				occupied++
+				for i := 0; i < MAX_NOTES; i++ {
+					if notes[i] == nil {
+						notes[i] = newNote
+						break
+					}
+				}
 			}
 		},
 	)
@@ -135,18 +138,20 @@ func AppUpdate() {
 			appState = 3
 		}
 		for _, note := range notes {
-			// Expand notes
-			if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
-				if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-					note.IsExpanded = !note.IsExpanded
-					break
+			if note != nil {
+				// Expand notes
+				if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
+					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+						note.IsExpanded = !note.IsExpanded
+						break
+					}
 				}
-			}
-			// Close notes
-			if note.IsExpanded && !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
-				if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-					note.IsExpanded = !note.IsExpanded
-					break
+				// Close notes
+				if note.IsExpanded && !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
+					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+						note.IsExpanded = !note.IsExpanded
+						break
+					}
 				}
 			}
 		}
@@ -158,19 +163,17 @@ func AppUpdate() {
 			appState = 2
 		}
 
-		for _, note := range notes {
-			// Drag notes
-			if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
-				if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
-					note.Src.X = mousePoint.X - 0.5*note.Src.Width
-					note.Src.Y = mousePoint.Y - 0.5*note.Src.Height
-				}
-			}
-			// Close notes
-			if note.IsExpanded && !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
-				if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-					note.IsExpanded = !note.IsExpanded
-					break
+		for i, note := range notes {
+			if note != nil {
+				// Drag notes
+				if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
+					if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
+						note.Src.X = mousePoint.X - 0.5*note.Src.Width
+						note.Src.Y = mousePoint.Y - 0.5*note.Src.Height
+					} else if rl.IsMouseButtonPressed(rl.MouseButtonRight) {
+						notes[i] = nil
+						occupied--
+					}
 				}
 			}
 		}
@@ -189,7 +192,6 @@ func AppRender() {
 	case 1:
 		// Title screen
 		ui.NewClock(SFFont, SCREEN_WIDTH, SCREEN_HEIGHT, rl.White)
-
 		nextBtn.Draw()
 	case 2, 3:
 
@@ -198,18 +200,19 @@ func AppRender() {
 		addBtn.Draw()
 		backBtn.Draw()
 		for _, note := range notes {
-			if note.IsExpanded {
-				drawQueue = append(drawQueue, note)
-			} else {
-				drawQueue = append([]*ui.Note{note}, drawQueue...)
+			if note != nil {
+				if !note.IsExpanded {
+					note.DrawTextureMini()
+				}
 			}
 		}
-		for _, note := range drawQueue {
-			if note.IsExpanded {
-				rl.DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, rl.NewColor(0, 0, 0, 150))
-				note.DrawTextureEx()
-			} else {
-				note.DrawTextureMini()
+		for _, note := range notes {
+			if note != nil {
+				if note.IsExpanded {
+					rl.DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, rl.NewColor(0, 0, 0, 150))
+					note.DrawTextureEx()
+					break
+				}
 			}
 		}
 	default:

@@ -18,7 +18,7 @@ type Note struct {
 	Src        rl.Rectangle
 	Dest       rl.Rectangle
 	Color      rl.Color
-	Content    []Todo
+	Content    [50]byte
 	IsExpanded bool
 	Z          int
 }

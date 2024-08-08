@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 	"strings"
 
 	rl "github.com/gen2brain/raylib-go/raylib"
@@ -12,10 +13,11 @@ import (
 )
 
 const (
-	SCREEN_WIDTH  = 1920
-	SCREEN_HEIGHT = 1080
-	APP_NAME      = "sundial"
-	MAX_NOTES     = 10
+	SCREEN_WIDTH    = 1280
+	SCREEN_HEIGHT   = 720
+	APP_NAME        = "sundial"
+	MAX_NOTES       = 10
+	MAX_INPUT_CHARS = 50
 )
 
 var (
@@ -32,8 +34,11 @@ var (
 	nextBtn *ui.Button
 	backBtn *ui.Button
 	// Canvas
-	notes    [MAX_NOTES]*ui.Note
-	occupied = 0
+	notes       [MAX_NOTES]*ui.Note
+	occupied    = 0
+	isEditMode  = false
+	buffer      [MAX_INPUT_CHARS]byte
+	letterCount = 0
 )
 
 func main() {
@@ -105,7 +110,7 @@ func init() {
 
 	// Audio
 	rl.InitAudioDevice()
-	backgroundMusic = *ui.NewMusic(ROOT + "assets/music/Ender Lilies - North.wav")
+	backgroundMusic = *ui.NewMusic(ROOT + "assets/music/North.wav")
 	backgroundMusic.Play()
 
 	// Get ROOT
@@ -134,7 +139,7 @@ func AppUpdate() {
 		addBtn.Update(mousePoint)
 		backBtn.Update(mousePoint)
 
-		if rl.IsKeyPressed(rl.KeyE) {
+		if rl.IsKeyPressed(rl.KeyE) && !isEditMode {
 			appState = 3
 		}
 		for _, note := range notes {
@@ -143,13 +148,7 @@ func AppUpdate() {
 				if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
 					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 						note.IsExpanded = !note.IsExpanded
-						break
-					}
-				}
-				// Close notes
-				if note.IsExpanded && !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
-					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
-						note.IsExpanded = !note.IsExpanded
+						appState = 4
 						break
 					}
 				}
@@ -164,15 +163,53 @@ func AppUpdate() {
 		}
 
 		for i, note := range notes {
-			if note != nil {
-				// Drag notes
-				if !note.IsExpanded && rl.CheckCollisionPointRec(mousePoint, note.Src) {
+			if note != nil && !note.IsExpanded {
+				if rl.CheckCollisionPointRec(mousePoint, note.Src) {
 					if rl.IsMouseButtonDown(rl.MouseButtonLeft) {
+						// Drag notes
 						note.Src.X = mousePoint.X - 0.5*note.Src.Width
 						note.Src.Y = mousePoint.Y - 0.5*note.Src.Height
 					} else if rl.IsMouseButtonPressed(rl.MouseButtonRight) {
+						// Delete notes
 						notes[i] = nil
 						occupied--
+					}
+				}
+			}
+		}
+	case 4:
+		for _, note := range notes {
+			if note != nil && note.IsExpanded {
+				if rl.CheckCollisionPointRec(mousePoint, note.Dest) {
+					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) || isEditMode {
+						isEditMode = true
+						key := rl.GetKeyPressed()
+						if key != 0 {
+							fmt.Println(key)
+							if key >= 32 && key <= 125 && letterCount < MAX_INPUT_CHARS {
+								buffer[letterCount] = byte(key)
+								buffer[letterCount+1] = '\000'
+								letterCount++
+							} else if rl.IsKeyPressed(rl.KeyBackspace) {
+								letterCount--
+								buffer[letterCount] = '\000'
+							} else if rl.IsKeyPressed(rl.KeyEnter) {
+								isEditMode = false
+								fmt.Println("Exiting input mode")
+							}
+							note.Content = buffer
+						}
+					}
+				}
+				// Close notes
+				if !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
+					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
+						note.IsExpanded = !note.IsExpanded
+						note.Content = buffer
+						fmt.Println(note.Content)
+						isEditMode = false
+						appState = 2
+						break
 					}
 				}
 			}
@@ -188,6 +225,7 @@ func AppRender() {
 	background.DrawWithOverlay()
 
 	// App state e.g: title screen, note canvas, timetable...
+	rl.DrawText(strconv.Itoa(appState), 20, 20, 50, rl.White)
 	switch appState {
 	case 1:
 		// Title screen
@@ -206,11 +244,13 @@ func AppRender() {
 				}
 			}
 		}
+	case 4:
 		for _, note := range notes {
 			if note != nil {
 				if note.IsExpanded {
 					rl.DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, rl.NewColor(0, 0, 0, 150))
 					note.DrawTextureEx()
+					rl.DrawTextEx(SFFont, string(note.Content[:]), rl.NewVector2(note.Dest.X+50, note.Dest.Y+70), float32(SFFont.BaseSize)/2, 1, rl.White)
 					break
 				}
 			}

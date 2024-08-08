@@ -15,6 +15,7 @@ const (
 	SCREEN_WIDTH  = 1280
 	SCREEN_HEIGHT = 720
 	APP_NAME      = "sundial"
+	MAX_NOTES     = 10
 )
 
 var (
@@ -33,6 +34,7 @@ var (
 	// Canvas
 	notes     []*ui.Note
 	drawQueue []*ui.Note
+	occupied  = 0
 )
 
 func main() {
@@ -50,16 +52,22 @@ func init() {
 	// Display
 	rl.InitWindow(SCREEN_WIDTH, SCREEN_HEIGHT, "SunDial")
 	rl.SetExitKey(0)
-	if rl.IsWindowFocused() {
-		rl.SetTargetFPS(60)
-	} else {
-		rl.SetTargetFPS(15)
-	}
+	rl.SetTargetFPS(60)
 	rl.SetTextLineSpacing(14)
 
 	background = *ui.NewBackground(ui.DynamicTheme(ROOT+"assets/images/backgrounds/"), rl.NewVector2(SCREEN_WIDTH, SCREEN_HEIGHT))
 
 	// Buttons
+	nextBtn = ui.NewButton(
+		ROOT+"assets/components/button/arrow_right_btn.png",
+		ROOT+"assets/components/button/btnsound.wav",
+		rl.NewVector2(SCREEN_WIDTH-20, SCREEN_HEIGHT-20), 1,
+		func() {
+			appState = 2
+			fmt.Println("Entering canvas mode")
+		},
+	)
+
 	addBtn = ui.NewButton(
 		ROOT+"assets/components/button/add_btn.png",
 		ROOT+"assets/components/button/btnsound.wav",
@@ -68,21 +76,14 @@ func init() {
 			newNote := ui.NewNote(
 				rl.NewVector2(
 					float32(rl.GetRandomValue(300, SCREEN_WIDTH-300)),
-					float32(rl.GetRandomValue(100, SCREEN_HEIGHT-100)),
+					float32(rl.GetRandomValue(100, SCREEN_HEIGHT-200)),
 				),
 				rl.NewVector2(SCREEN_WIDTH, SCREEN_HEIGHT),
 			)
-			notes = append(notes, newNote)
-		},
-	)
-
-	nextBtn = ui.NewButton(
-		ROOT+"assets/components/button/arrow_right_btn.png",
-		ROOT+"assets/components/button/btnsound.wav",
-		rl.NewVector2(SCREEN_WIDTH-20, SCREEN_HEIGHT-20), 1,
-		func() {
-			appState = 2
-			fmt.Println("Entering canvas mode")
+			if occupied < MAX_NOTES {
+				notes = append(notes, newNote)
+				occupied++
+			}
 		},
 	)
 
@@ -221,6 +222,7 @@ func AppShutDown() {
 	// Unload texture
 	background.Unload()
 	nextBtn.Unload()
+	backBtn.Unload()
 	addBtn.Unload()
 
 	// Unload Audio

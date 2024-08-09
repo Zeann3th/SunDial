@@ -12,11 +12,11 @@ import (
 )
 
 const (
-	SCREEN_WIDTH    = 1280
-	SCREEN_HEIGHT   = 720
+	SCREEN_WIDTH    = 1920
+	SCREEN_HEIGHT   = 1080
 	APP_NAME        = "sundial"
 	MAX_NOTES       = 10
-	MAX_INPUT_CHARS = 50
+	MAX_INPUT_CHARS = 100
 )
 
 var (
@@ -36,7 +36,13 @@ var (
 	notes        [MAX_NOTES]*ui.Note
 	occupied     = 0
 	isEditMode   = false
-	letterCounts [MAX_NOTES]int
+	letterCounts [MAX_INPUT_CHARS]int
+	mode         = map[int]string{
+		1: "Title screen",
+		2: "Normal mode",
+		3: "Edit mode",
+		4: "Write mode",
+	}
 )
 
 func main() {
@@ -256,6 +262,16 @@ func AppRender() {
 		}
 	default:
 	}
+	textDims := rl.MeasureTextEx(SFFont, mode[appState], float32(SFFont.BaseSize)/2, 1)
+	rl.DrawRectangle(
+		int32(SCREEN_WIDTH/2-textDims.X/2-15), int32(SCREEN_HEIGHT-textDims.Y-10),
+		int32(textDims.X+30), int32(textDims.Y+10), rl.NewColor(17, 21, 25, 255))
+
+	rl.DrawTextEx(
+		SFFont,
+		mode[appState],
+		rl.NewVector2(SCREEN_WIDTH/2-textDims.X/2, SCREEN_HEIGHT-textDims.Y),
+		float32(SFFont.BaseSize)/2, 1, rl.White)
 
 	rl.EndDrawing()
 }

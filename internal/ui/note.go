@@ -18,9 +18,8 @@ type Note struct {
 	Src        rl.Rectangle
 	Dest       rl.Rectangle
 	Color      rl.Color
-	Content    [50]byte
+	Content    [100]byte
 	IsExpanded bool
-	Z          int
 }
 
 func NewNote(notePos, screenDims rl.Vector2) *Note {

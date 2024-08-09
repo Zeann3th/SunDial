@@ -33,11 +33,10 @@ var (
 	nextBtn *ui.Button
 	backBtn *ui.Button
 	// Canvas
-	notes       [MAX_NOTES]*ui.Note
-	occupied    = 0
-	isEditMode  = false
-	buffer      [MAX_INPUT_CHARS]byte
-	letterCount = 0
+	notes        [MAX_NOTES]*ui.Note
+	occupied     = 0
+	isEditMode   = false
+	letterCounts [MAX_NOTES]int
 )
 
 func main() {
@@ -125,7 +124,7 @@ func init() {
 func AppUpdate() {
 	backgroundMusic.Update()
 	// Mute Music / Unmute music
-	if rl.IsKeyPressed(rl.KeyM) {
+	if rl.IsKeyPressed(rl.KeyM) && !isEditMode {
 		backgroundMusic.ToggleMute()
 	}
 
@@ -171,13 +170,14 @@ func AppUpdate() {
 					} else if rl.IsMouseButtonPressed(rl.MouseButtonRight) {
 						// Delete notes
 						notes[i] = nil
+						letterCounts[i] = 0
 						occupied--
 					}
 				}
 			}
 		}
 	case 4:
-		for _, note := range notes {
+		for i, note := range notes {
 			if note != nil && note.IsExpanded {
 				if rl.CheckCollisionPointRec(mousePoint, note.Dest) {
 					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) || isEditMode {
@@ -185,18 +185,18 @@ func AppUpdate() {
 						key := rl.GetKeyPressed()
 						if key != 0 {
 							fmt.Println(key)
-							if key >= 32 && key <= 125 && letterCount < MAX_INPUT_CHARS {
-								buffer[letterCount] = byte(key)
-								buffer[letterCount+1] = '\000'
-								letterCount++
+							if key >= 32 && key <= 125 && letterCounts[i] < MAX_INPUT_CHARS {
+								note.Content[letterCounts[i]] = byte(key)
+								note.Content[letterCounts[i]+1] = '\000'
+								letterCounts[i]++
 							} else if rl.IsKeyPressed(rl.KeyBackspace) {
-								letterCount--
-								buffer[letterCount] = '\000'
+								letterCounts[i]--
+								note.Content[letterCounts[i]] = '\000'
 							} else if rl.IsKeyPressed(rl.KeyEnter) {
 								isEditMode = false
 								fmt.Println("Exiting input mode")
+								break
 							}
-							note.Content = buffer
 						}
 					}
 				}
@@ -204,9 +204,9 @@ func AppUpdate() {
 				if !rl.CheckCollisionPointRec(mousePoint, note.Dest) {
 					if rl.IsMouseButtonPressed(rl.MouseButtonLeft) {
 						note.IsExpanded = !note.IsExpanded
-						note.Content = buffer
 						fmt.Println(note.Content)
 						isEditMode = false
+						fmt.Println("Exiting input mode")
 						appState = 2
 						break
 					}
@@ -223,8 +223,8 @@ func AppRender() {
 	rl.ClearBackground(rl.RayWhite)
 	background.DrawWithOverlay()
 
-	// App state e.g: title screen, note canvas, timetable...
 	// rl.DrawText(strconv.Itoa(appState), 20, 20, 50, rl.White)
+	// App state e.g: title screen, note canvas, timetable...
 	switch appState {
 	case 1:
 		// Title screen
@@ -249,7 +249,7 @@ func AppRender() {
 				if note.IsExpanded {
 					rl.DrawRectangle(0, 0, SCREEN_WIDTH, SCREEN_HEIGHT, rl.NewColor(0, 0, 0, 150))
 					note.DrawTextureEx()
-					rl.DrawTextEx(SFFont, string(note.Content[:]), rl.NewVector2(note.Dest.X+50, note.Dest.Y+70), float32(SFFont.BaseSize)/2, 1, rl.White)
+					rl.DrawTextEx(SFFont, string(note.Content[:]), rl.NewVector2(note.Dest.X+50, note.Dest.Y+70), float32(SFFont.BaseSize)/2, 1, rl.Black)
 					break
 				}
 			}

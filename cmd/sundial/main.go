@@ -123,7 +123,7 @@ func init() {
 		log.Fatal(err)
 	}
 	fmt.Println(wd)
-	ROOT = wd[:strings.Index(wd, APP_NAME)] + APP_NAME + "/"
+	ROOT = wd[:strings.Index(wd, APP_NAME)+1] + APP_NAME + "/"
 	os.Chdir(ROOT)
 }
 
